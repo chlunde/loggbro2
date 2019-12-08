@@ -1,0 +1,48 @@
+name: buildx
+
+on:
+  pull_request:
+    branches: master
+  push:
+    branches: master
+    tags:
+
+jobs:
+  buildx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: crazy-max/ghaction-docker-buildx@v1
+        with:
+          version: latest
+
+      - name: Available platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
+
+      - name: Log in to registry
+        run: |
+          # https://github.community/t5/GitHub-API-Development-and/Handle-multi-arch-Docker-images-on-GitHub-Package-Registry/m-p/31650#M2981
+          #docker login docker.pkg.github.com -u "${GITHUB_ACTOR}" -p "${GITHUB_PACKAGE_REGISTRY_TOKEN}"
+          #docker push docker.pkg.github.com/chlunde/loggbro2:latest
+          docker login -u "${GITHUB_ACTOR}" -p "${DOCKER_TOKEN}"
+        env:
+          GITHUB_PACKAGE_REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+
+      # - name: Run simple build
+      #   run: |
+      #     docker build --tag "docker.pkg.github.com/chlunde/loggbro2/loggbro2:latest" .
+      #     docker push "docker.pkg.github.com/chlunde/loggbro2/loggbro2:latest"
+
+      - name: Run Buildx
+        run: |
+          docker buildx build \
+            --platform linux/arm/v7 \
+            --output "type=image,push=true" \
+            --tag "docker.io/chlunde/loggbro:latest" \
+            --file ./Dockerfile ./
+        # --tag docker.pkg.github.com/chlunde/loggbro2/arm:arm
