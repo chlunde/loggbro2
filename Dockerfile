@@ -6,7 +6,7 @@ ADD . /code
 
 RUN go get -d -v ./...
 
-RUN go build -o /code/app
+RUN CGO_ENABLED=0 go build -o /code/app
 
 # Now copy it into our base image.
 FROM gcr.io/distroless/base-debian10
